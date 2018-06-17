@@ -7,6 +7,28 @@
  *
  * Inspired by http://requestlab.fr/ and http://disruptivebydesign.com/
  */
+ 
+ // isOnViewPort to check element is in viewport then set it to true;
+ var isOnViewPort=false;
+ 
+$.fn.isOnScreen = function(){
+
+    var win = $(window);
+
+    var viewport = {
+        top : win.scrollTop(),
+        left : win.scrollLeft()
+    };
+    viewport.right = viewport.left + win.width();
+    viewport.bottom = viewport.top + win.height();
+
+    var bounds = this.offset();
+    bounds.right = bounds.left + this.outerWidth();
+    bounds.bottom = bounds.top + this.outerHeight();
+
+    return (!(viewport.right < bounds.left || viewport.left > bounds.right || viewport.bottom < bounds.top || viewport.top > bounds.bottom));
+
+};
 
 ;(function(window, document) {
   "use strict";
@@ -77,12 +99,26 @@
       window.addEventListener('resize', function() {
         resizeHandler();
       }, false);
-
+	  
       document.addEventListener('mousemove', function(e) {
         mouseX = e.pageX;
         mouseY = e.pageY;
       }, false);
 
+	  document.addEventListener('scroll', function(e) {
+       if ($('.pg-canvas').isOnScreen()&& !isOnViewPort) {
+            // The element is visible, do something
+			mouseX = 739;
+			mouseY = 260;
+			isOnViewPort=true;
+			start()
+        } else if(!$('.pg-canvas').isOnScreen()) {
+            // The element is NOT visible, do something else
+			isOnViewPort=false;
+			pause()
+        }
+      }, false);
+	  
       if (orientationSupport && !desktop) {
         window.addEventListener('deviceorientation', function () {
           // Contrain tilt range to [-30,30]
@@ -92,7 +128,6 @@
       }
 
       draw();
-      hook('onInit');
     }
 
     /**
@@ -346,15 +381,8 @@
     function destroy() {
       console.log('destroy');
       canvas.parentNode.removeChild(canvas);
-      hook('onDestroy');
       if ($) {
         $(element).removeData('plugin_' + pluginName);
-      }
-    }
-
-    function hook(hookName) {
-      if (options[hookName] !== undefined) {
-        options[hookName].call(element);
       }
     }
 
@@ -387,9 +415,9 @@
     curvedLines: false,
     proximity: 100, // How close two dots need to be before they join
     parallax: true,
-    parallaxMultiplier: 5, // The lower the number, the more extreme the parallax effect
-    onInit: function() {},
-    onDestroy: function() {}
+    parallaxMultiplier: 5 // The lower the number, the more extreme the parallax effect
+   // onInit: function() {},
+    //onDestroy: function() {}
   };
 
   // nothing wrong with hooking into jQuery if it's there...
